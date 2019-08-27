@@ -172,6 +172,16 @@ export interface ShieldsReady {
   (): ShieldsReadyReturn
 }
 
+interface PageContentReadyForInjectionReturn {
+  type: types.PAGE_CONTENT_READY_FOR_INJECTION,
+  tabId: number,
+  hostname: string,
+}
+
+export interface PageContentReadyForInjection {
+  (tabId: number, hostname: string): PageContentReadyForInjectionReturn
+}
+
 export type shieldPanelActions =
   ShieldsPanelDataUpdatedReturn |
   ShieldsToggledReturn |
@@ -189,4 +199,5 @@ export type shieldPanelActions =
   SetAllScriptsBlockedCurrentStateReturn |
   SetFinalScriptsBlockedStateReturn |
   SetAdvancedViewFirstAccessReturn |
-  ShieldsReadyReturn
+  ShieldsReadyReturn |
+  PageContentReadyForInjectionReturn
