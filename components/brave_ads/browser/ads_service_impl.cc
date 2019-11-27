@@ -26,6 +26,7 @@
 #include "bat/ads/notification_event_type.h"
 #include "bat/ads/resources/grit/bat_ads_resources.h"
 #include "brave/components/brave_ads/browser/ad_notification.h"
+#include "brave/components/brave_ads/browser/ads_notification_handler.h"
 #include "brave/components/brave_ads/browser/bundle_state_database.h"
 #include "brave/components/brave_ads/browser/locale_helper.h"
 #include "brave/components/brave_ads/common/pref_names.h"
@@ -41,7 +42,6 @@
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/notifications/notification_display_service.h"
 #include "chrome/browser/notifications/notification_display_service_impl.h"
-#include "chrome/browser/notifications/notification_handler.h"
 #include "chrome/browser/profiles/profile.h"
 #if !defined(OS_ANDROID)
 #include "chrome/browser/ui/browser.h"
@@ -84,7 +84,13 @@ const char kRewardsNotificationAdsOnboarding[] =
 
 const unsigned int kRetriesCountOnNetworkChange = 1;
 
-}
+#if defined(OS_ANDROID)
+const int kMaximumAdNotifications = 3;
+#else
+const int kMaximumAdNotifications = 0;  // No limit
+#endif
+
+}  // namespace
 
 class LogStreamImpl : public ads::LogStream {
  public:
@@ -121,82 +127,6 @@ class LogStreamImpl : public ads::LogStream {
   std::unique_ptr<logging::LogMessage> log_message_;
 
   DISALLOW_COPY_AND_ASSIGN(LogStreamImpl);
-};
-
-class AdsNotificationHandler : public NotificationHandler {
- public:
-  explicit AdsNotificationHandler(AdsServiceImpl* ads_service) :
-      ads_service_(ads_service->AsWeakPtr()) {
-  }
-
-  ~AdsNotificationHandler() override {
-  }
-
-  // NotificationHandler implementation
-  void OnShow(
-      Profile* profile,
-      const std::string& id) override {
-    if (!ads_service_) {
-      return;
-    }
-
-    ads_service_->OnShow(profile, id);
-  }
-
-  void OnClose(
-      Profile* profile,
-      const GURL& origin,
-      const std::string& id,
-      const bool by_user,
-      base::OnceClosure completed_closure) override {
-    if (!ads_service_) {
-      if (completed_closure) {
-        std::move(completed_closure).Run();
-      }
-
-      return;
-    }
-
-    ads_service_->OnClose(profile, origin, id, by_user,
-        std::move(completed_closure));
-  }
-
-  void OnClick(
-      Profile* profile,
-      const GURL& origin,
-      const std::string& id,
-      const base::Optional<int>& action_index,
-      const base::Optional<base::string16>& reply,
-      base::OnceClosure completed_closure) override {
-    if (!ads_service_) {
-      return;
-    }
-
-    ads_service_->ViewAd(id);
-  }
-
-  void DisableNotifications(
-      Profile* profile,
-      const GURL& origin) override {
-  }
-
-  void OpenSettings(
-      Profile* profile,
-      const GURL& origin) override {
-    if (!ads_service_) {
-      return;
-    }
-
-    DCHECK(origin.has_query());
-
-    auto id = origin.query();
-    ads_service_->ViewAd(id);
-  }
-
- private:
-  base::WeakPtr<AdsServiceImpl> ads_service_;
-
-  DISALLOW_COPY_AND_ASSIGN(AdsNotificationHandler);
 };
 
 namespace {
@@ -393,11 +323,11 @@ AdsServiceImpl::AdsServiceImpl(Profile* profile) :
   profile_pref_change_registrar_.Add(prefs::kIdleThreshold,
       base::Bind(&AdsServiceImpl::OnPrefsChanged, base::Unretained(this)));
 
-  auto* display_service_impl =
-      static_cast<NotificationDisplayServiceImpl*>(display_service_);
-  display_service_impl->AddNotificationHandler(
-      NotificationHandler::Type::BRAVE_ADS,
-          std::make_unique<AdsNotificationHandler>(this));
+  // auto* display_service_impl =
+  //    static_cast<NotificationDisplayServiceImpl*>(display_service_);
+  // display_service_impl->AddNotificationHandler(
+  //    NotificationHandler::Type::BRAVE_ADS,
+  //        std::make_unique<AdsNotificationHandler>(this));
 
 #if !defined(OS_ANDROID)
   // TODO(tmancey): Refactor on-boarding to be platform agnostic
@@ -615,6 +545,17 @@ void AdsServiceImpl::Shutdown() {
   bat_ads_.reset();
   bat_ads_client_binding_.Close();
 
+  for (auto it = notifications_.cbegin(); it != notifications_.cend(); ++it) {
+    CloseNotification(*it);
+  }
+  notifications_.clear();
+
+  auto* ads_notification_handler = static_cast<AdsNotificationHandler*>(
+      profile_->GetUserData(AdsNotificationHandler::UserDataKey()));
+  if (ads_notification_handler) {
+    ads_notification_handler->SetAdsService(nullptr);
+  }
+
   is_initialized_ = false;
 }
 
@@ -638,12 +579,17 @@ void AdsServiceImpl::OnInitialize(
     is_initialized_ = true;
 
     // OnBraveAdsServiceReady is implemented for Android for now
-    #if defined(OS_ANDROID)
-// TODO(jocelyn): FIXME
-//      auto* display_service_impl =
-//          static_cast<NotificationDisplayServiceImpl*>(display_service_);
-//      display_service_impl->OnBraveAdsServiceReady(is_initialized_);
-    #endif
+// #if defined(OS_ANDROID)
+//    auto* display_service_impl =
+//        static_cast<NotificationDisplayServiceImpl*>(display_service_);
+//    display_service_impl->OnBraveAdsServiceReady(is_initialized_);
+// #endif
+
+    auto* ads_notification_handler = static_cast<AdsNotificationHandler*>(
+        profile_->GetUserData(AdsNotificationHandler::UserDataKey()));
+    if (ads_notification_handler) {
+      ads_notification_handler->SetAdsService(this);
+    }
 
     MaybeViewAd();
 
@@ -874,6 +820,15 @@ void AdsServiceImpl::OnShow(
   auto type = ToMojomNotificationEventType(ads::NotificationEventType::VIEWED);
 
   bat_ads_->OnNotificationEvent(id, type);
+
+  // If we've surpassed the maximum number of visible notifications,
+  // then close the oldest one
+  notifications_.push_back(id);
+  if (kMaximumAdNotifications > 0 &&
+      notifications_.size() > kMaximumAdNotifications) {
+    CloseNotification(notifications_.front());
+    notifications_.pop_front();
+  }
 }
 
 void AdsServiceImpl::OnClose(
@@ -891,6 +846,11 @@ void AdsServiceImpl::OnClose(
 
   if (completed_closure) {
     std::move(completed_closure).Run();
+  }
+
+  const auto it = std::find(notifications_.begin(), notifications_.end(), id);
+  if (it != notifications_.end()) {
+    notifications_.erase(it);
   }
 }
 

@@ -5,6 +5,7 @@
 
 #include "brave/build/android/jni_headers/BraveNotificationPlatformBridge_jni.h"
 #include "chrome/browser/notifications/notification_platform_bridge_android.h"
+
 #include "chrome/android/chrome_jni_headers/NotificationPlatformBridge_jni.h"
 
 namespace {
