@@ -38,7 +38,7 @@ class BraveSyncEventRouter {
   void GotInitData(const brave_sync::Uint8Array& seed,
                    const brave_sync::Uint8Array& device_id,
                    const extensions::api::brave_sync::Config& config,
-                   const std::string& device_uuid);
+                   const std::string& device_id_v2);
 
   void FetchSyncRecords(
     const std::vector<std::string>& category_names,

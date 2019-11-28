@@ -22,7 +22,7 @@ public:
   SyncDevice(const std::string& name,
     const std::string& object_id,
     const std::string& device_id,
-    const std::string& device_uuid,
+    const std::string& device_id_v2,
     const double last_active_ts);
   SyncDevice& operator=(const SyncDevice&) &;
   ~SyncDevice();
@@ -32,7 +32,7 @@ public:
   std::string name_;
   std::string object_id_;
   std::string device_id_;
-  std::string device_uuid_;
+  std::string device_id_v2_;
   double last_active_ts_;
 };
 

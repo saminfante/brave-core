@@ -10,7 +10,7 @@ const keyName = 'sync-data_t'
 export const defaultState = {
   thisDeviceName: '',
   thisDeviceId: '',
-  thisDeviceUuid: '',
+  thisDeviceIdV2: '',
   devices: [],
   isSyncConfigured: false,
   seedQRImageSource: '',

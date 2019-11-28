@@ -89,7 +89,7 @@ ExtensionFunction::ResponseAction BraveSyncSaveInitDataFunction::Run() {
   sync_service->GetBraveSyncClient()->sync_message_handler()->OnSaveInitData(
       params->seed ? *params->seed : std::vector<uint8_t>(),
       params->device_id ? *params->device_id : std::vector<uint8_t>(),
-      params->device_uuid ? *params->device_uuid : std::string());
+      params->device_id_v2 ? *params->device_id_v2 : std::string());
 
   return RespondNow(NoArguments());
 }

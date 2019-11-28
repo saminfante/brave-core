@@ -36,7 +36,7 @@ class SyncMessageHandler {
   // SAVE_INIT_DATA
   virtual void OnSaveInitData(const Uint8Array& seed,
                               const Uint8Array& device_id,
-                              const std::string& device_uuid) = 0;
+                              const std::string& device_id_v2) = 0;
   // SYNC_READY
   virtual void OnSyncReady() = 0;
   // GET_EXISTING_OBJECTS
@@ -70,7 +70,7 @@ class BraveSyncClient {
   virtual void SendGotInitData(const Uint8Array& seed,
                                const Uint8Array& device_id,
                                const client_data::Config& config,
-                               const std::string& device_uuid) = 0;
+                               const std::string& device_id_v2) = 0;
   virtual void SendFetchSyncRecords(
       const std::vector<std::string> &category_names,
       const base::Time &startAt,

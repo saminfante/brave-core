@@ -14,7 +14,7 @@ declare namespace Sync {
   export interface DevicesFromBackEnd {
     name: string
     device_id: number
-    device_uuid: string
+    device_id_v2: string
     last_active: number
   }
 
@@ -34,7 +34,7 @@ export type SetupErrorType =
   export interface State {
     thisDeviceName: string
     thisDeviceId: string
-    thisDeviceUuid: string
+    thisDeviceIdV2: string
     devices: Devices[]
     isSyncConfigured: boolean
     seedQRImageSource: string

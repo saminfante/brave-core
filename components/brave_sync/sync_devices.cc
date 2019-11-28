@@ -25,12 +25,12 @@ SyncDevice::SyncDevice(const SyncDevice& other) = default;
 SyncDevice::SyncDevice(const std::string& name,
   const std::string& object_id,
   const std::string& device_id,
-  const std::string& device_uuid,
+  const std::string& device_id_v2,
   const double last_active_ts) :
   name_(name),
   object_id_(object_id),
   device_id_(device_id),
-  device_uuid_(device_uuid),
+  device_id_v2_(device_id_v2),
   last_active_ts_(last_active_ts) {
 }
 
@@ -45,7 +45,7 @@ std::unique_ptr<base::Value> SyncDevice::ToValue() const {
   val_sync_device->SetKey("name", base::Value(name_));
   val_sync_device->SetKey("object_id", base::Value(object_id_));
   val_sync_device->SetKey("device_id", base::Value(device_id_));
-  val_sync_device->SetKey("device_uuid", base::Value(device_uuid_));
+  val_sync_device->SetKey("device_id_v2", base::Value(device_id_v2_));
   val_sync_device->SetKey("last_active", base::Value(last_active_ts_));
 
   return val_sync_device;
@@ -113,7 +113,10 @@ void SyncDevices::FromJson(const std::string& str_json) {
     std::string name = val.FindKey("name")->GetString();
     std::string object_id = val.FindKey("object_id")->GetString();
     std::string device_id = val.FindKey("device_id")->GetString();
-    std::string device_uuid = val.FindKey("device_uuid")->GetString();
+    std::string device_id_v2;
+    const base::Value* device_id_value = val.FindKey("device_id_v2");
+    if (device_id_value)
+      device_id_v2 = device_id_value->GetString();
     double last_active = 0;
     const base::Value *v_last_active = val.FindKey("last_active");
     if (v_last_active->is_double()) {
@@ -126,7 +129,7 @@ void SyncDevices::FromJson(const std::string& str_json) {
       name,
       object_id,
       device_id,
-      device_uuid,
+      device_id_v2,
       last_active) );
   }
 }
