@@ -18,17 +18,17 @@ grit("resources") {
   resource_ids = "//brave/browser/resources/resource_ids"
 
   deps = [
-    ":copy_viewport_js"
+    ":copy_javascript_overrides"
   ]
 }
 
-copy("copy_viewport_js") {
+copy("copy_javascript_overrides") {
   sources = [
-    "viewport.js",
+    "js_override/pdf/viewport.js",
   ]
 
   outputs = [
-    "$root_build_dir/viewport.js",
+    "$root_build_dir/js_override/pdf/viewport.js",
   ]
 }
 
