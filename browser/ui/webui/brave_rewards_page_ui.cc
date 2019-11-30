@@ -99,7 +99,7 @@ class RewardsDOMHandler : public WebUIMessageHandler,
   void CheckImported(const base::ListValue* args);
   void GetAdsData(const base::ListValue* args);
   void GetAdsHistory(const base::ListValue* args);
-  void OnGetAdsHistory(const base::ListValue& ads_history);
+  void OnGetAdsHistory(const base::ListValue& history);
   void ToggleAdThumbUp(const base::ListValue* args);
   void OnToggleAdThumbUp(const std::string& id, int action);
   void ToggleAdThumbDown(const base::ListValue* args);
@@ -1129,13 +1129,12 @@ void RewardsDOMHandler::GetAdsHistory(const base::ListValue* args) {
                                          weak_factory_.GetWeakPtr()));
 }
 
-void RewardsDOMHandler::OnGetAdsHistory(const base::ListValue& ads_history) {
+void RewardsDOMHandler::OnGetAdsHistory(const base::ListValue& history) {
   if (!web_ui()->CanCallJavascript()) {
     return;
   }
 
-  web_ui()->CallJavascriptFunctionUnsafe("brave_rewards.adsHistory",
-                                         ads_history);
+  web_ui()->CallJavascriptFunctionUnsafe("brave_rewards.adsHistory", history);
 }
 
 void RewardsDOMHandler::ToggleAdThumbUp(const base::ListValue* args) {

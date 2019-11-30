@@ -5,7 +5,7 @@
 
 #include "bat/ads/internal/client_state.h"
 
-#include "bat/ads/ad_history_detail.h"
+#include "bat/ads/ad_history.h"
 #include "bat/ads/internal/json_helper.h"
 #include "bat/ads/internal/static_values.h"
 #include "bat/ads/internal/time.h"
@@ -102,7 +102,7 @@ Result ClientState::FromJson(
       if (ad_shown.IsUint64()) {
         continue;
       }
-      AdHistoryDetail ad_history_detail;
+      AdHistory ad_history_detail;
       rapidjson::StringBuffer buffer;
       rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
       if (ad_shown.Accept(writer) &&

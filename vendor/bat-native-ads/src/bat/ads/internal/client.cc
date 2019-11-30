@@ -5,7 +5,7 @@
 
 #include "bat/ads/internal/client.h"
 
-#include "bat/ads/ad_history_detail.h"
+#include "bat/ads/ad_history.h"
 #include "bat/ads/internal/classification_helper.h"
 #include "bat/ads/internal/filtered_ad.h"
 #include "bat/ads/internal/filtered_category.h"
@@ -61,7 +61,7 @@ void Client::Initialize(InitializeCallback callback) {
 }
 
 void Client::AppendAdToAdsShownHistory(
-    const AdHistoryDetail& ad_history_detail) {
+    const AdHistory& ad_history_detail) {
   client_state_->ads_shown_history.push_front(ad_history_detail);
 
   if (client_state_->ads_shown_history.size() >
@@ -72,7 +72,7 @@ void Client::AppendAdToAdsShownHistory(
   SaveState();
 }
 
-const std::deque<AdHistoryDetail> Client::GetAdsShownHistory() const {
+const std::deque<AdHistory> Client::GetAdsShownHistory() const {
   return client_state_->ads_shown_history;
 }
 

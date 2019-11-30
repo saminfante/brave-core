@@ -7,7 +7,6 @@
 #define BAT_ADS_ADS_H_
 
 #include <stdint.h>
-#include <map>
 #include <string>
 #include <memory>
 #include <vector>
@@ -203,10 +202,10 @@ class ADS_EXPORT Ads {
   virtual void RemoveAllHistory(
       RemoveAllHistoryCallback callback) = 0;
 
-  // Should be called to get ads history. Returns |std::map<uint64_t,
-  // std::vector<AdsHistory>>| in the format |{timestamp, array<AdsHistory>}|
-  virtual std::map<uint64_t, std::vector<AdsHistory>> GetAdsHistory(
-      const AdsHistoryFilterType ad_history_filterype) = 0;
+  // Should be called to get ads history. Returns |AdsHistory|
+  virtual AdsHistory GetAdsHistory(
+      const AdsHistoryFilterType filter_type,
+      const AdsHistorySortType sort_type) = 0;
 
   // Should be called to indicate interest in the specified ad. This is a
   // toggle, so calling it again returns the setting to the neutral state

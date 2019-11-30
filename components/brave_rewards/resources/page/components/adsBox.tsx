@@ -175,65 +175,89 @@ class AdsBox extends React.Component<Props, State> {
     this.props.actions.toggleFlagAd(uuid, creativeSetId, flagged)
   }
 
-  getAdHistoryData = (adHistoryData: Rewards.AdsHistoryData[], savedOnly: boolean) => {
-    return adHistoryData.map((item: Rewards.AdsHistoryData) => {
-      return {
-        id: item.id,
-        date: new Date(item.timestampInMilliseconds).toLocaleDateString(),
-        adDetailRows: (
-          item.adDetailRows.map((itemDetail: Rewards.AdHistoryDetail) => {
-            let brandInfo = itemDetail.adContent.brandInfo
-            if (brandInfo.length > 50) {
-              brandInfo = brandInfo.substring(0, 50) + '...'
-            }
-            const adContent: Rewards.AdContent = {
-              uuid: itemDetail.adContent.uuid,
-              creativeSetId: itemDetail.adContent.creativeSetId,
-              brand: itemDetail.adContent.brand,
-              brandInfo: brandInfo,
-              brandLogo: itemDetail.adContent.brandLogo,
-              brandDisplayUrl: itemDetail.adContent.brandDisplayUrl,
-              brandUrl: itemDetail.adContent.brandUrl,
-              likeAction: itemDetail.adContent.likeAction,
-              adAction: itemDetail.adContent.adAction,
-              savedAd: itemDetail.adContent.savedAd,
-              flaggedAd: itemDetail.adContent.flaggedAd,
-              onThumbUpPress: () =>
-                this.onThumbUpPress(itemDetail.adContent.uuid,
-                                    itemDetail.adContent.creativeSetId,
-                                    itemDetail.adContent.likeAction),
-              onThumbDownPress: () =>
-                this.onThumbDownPress(itemDetail.adContent.uuid,
-                                      itemDetail.adContent.creativeSetId,
-                                      itemDetail.adContent.likeAction),
-              onMenuSave: () =>
-                this.onMenuSave(itemDetail.adContent.uuid,
-                                itemDetail.adContent.creativeSetId,
-                                itemDetail.adContent.savedAd),
-              onMenuFlag: () =>
-                this.onMenuFlag(itemDetail.adContent.uuid,
-                                itemDetail.adContent.creativeSetId,
-                                itemDetail.adContent.flaggedAd)
-            }
-            const categoryContent: Rewards.CategoryContent = {
-              category: itemDetail.categoryContent.category,
-              optAction: itemDetail.categoryContent.optAction,
-              onOptInAction: () =>
-                this.onOptInAction(itemDetail.categoryContent.category,
-                                   itemDetail.categoryContent.optAction),
-              onOptOutAction: () =>
-                this.onOptOutAction(itemDetail.categoryContent.category,
-                                    itemDetail.categoryContent.optAction)
-            }
-            return {
-              id: itemDetail.id,
-              adContent: adContent,
-              categoryContent: categoryContent
-            }
+  getAdHistoryData = (adsHistoryData: Rewards.AdsHistoryData[], savedOnly: boolean) => {
+    var flattenedAdsHistoryData : Rewards.AdsHistoryData[] = []
+
+    for (let i = 0; i < adsHistoryData.length; i++) {
+      let adHistoryData = adsHistoryData[i]
+
+      let id = adHistoryData.id
+
+      let flooredDate = new Date(adHistoryData.timestampInMilliseconds)
+      flooredDate.setHours(0, 0, 0, 0)
+      let flooredDateString = flooredDate.toLocaleDateString()
+
+      for (let j = 0; j < adHistoryData.adDetailRows.length; j++) {
+        let adDetailRow = this.getAdDetailRow(adHistoryData.adDetailRows[j])
+
+        let index = flattenedAdsHistoryData.findIndex(item => item.date == flooredDateString)
+        if (index === -1) {
+          flattenedAdsHistoryData.push({
+            id: id,
+            date: flooredDateString,
+            adDetailRows: [adDetailRow]
           })
-        )
+        } else {
+          flattenedAdsHistoryData[index].adDetailRows.push(adDetailRow)
+        }
       }
-    })
+    }
+
+    return flattenedAdsHistoryData
+  }
+
+  getAdDetailRow = (itemDetail: Rewards.AdHistory) => {
+    let brandInfo = itemDetail.adContent.brandInfo
+    if (brandInfo.length > 50) {
+      brandInfo = brandInfo.substring(0, 50) + '...'
+    }
+
+    const adContent: Rewards.AdContent = {
+      uuid: itemDetail.adContent.uuid,
+      creativeSetId: itemDetail.adContent.creativeSetId,
+      brand: itemDetail.adContent.brand,
+      brandInfo: brandInfo,
+      brandLogo: itemDetail.adContent.brandLogo,
+      brandDisplayUrl: itemDetail.adContent.brandDisplayUrl,
+      brandUrl: itemDetail.adContent.brandUrl,
+      likeAction: itemDetail.adContent.likeAction,
+      adAction: itemDetail.adContent.adAction,
+      savedAd: itemDetail.adContent.savedAd,
+      flaggedAd: itemDetail.adContent.flaggedAd,
+      onThumbUpPress: () =>
+        this.onThumbUpPress(itemDetail.adContent.uuid,
+                            itemDetail.adContent.creativeSetId,
+                            itemDetail.adContent.likeAction),
+      onThumbDownPress: () =>
+        this.onThumbDownPress(itemDetail.adContent.uuid,
+                              itemDetail.adContent.creativeSetId,
+                              itemDetail.adContent.likeAction),
+      onMenuSave: () =>
+        this.onMenuSave(itemDetail.adContent.uuid,
+                        itemDetail.adContent.creativeSetId,
+                        itemDetail.adContent.savedAd),
+      onMenuFlag: () =>
+        this.onMenuFlag(itemDetail.adContent.uuid,
+                        itemDetail.adContent.creativeSetId,
+                        itemDetail.adContent.flaggedAd)
+    }
+
+    const categoryContent: Rewards.CategoryContent = {
+      category: itemDetail.categoryContent.category,
+      optAction: itemDetail.categoryContent.optAction,
+      onOptInAction: () =>
+        this.onOptInAction(itemDetail.categoryContent.category,
+                            itemDetail.categoryContent.optAction),
+      onOptOutAction: () =>
+        this.onOptOutAction(itemDetail.categoryContent.category,
+                            itemDetail.categoryContent.optAction)
+    }
+
+    return {
+      id: itemDetail.id,
+      adContent: adContent,
+      categoryContent: categoryContent
+    }
   }
 
   hasSavedEntries = (adHistoryData: Rewards.AdsHistoryData[]) => {

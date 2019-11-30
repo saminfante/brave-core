@@ -11,7 +11,7 @@
 #include "bat/ads/internal/filters/ad_history_confirmation_filter.h"
 
 #include "bat/ads/ads_history.h"
-#include "bat/ads/ad_history_detail.h"
+#include "bat/ads/ad_history.h"
 #include "bat/ads/internal/client_mock.h"
 #include "bat/ads/internal/ads_client_mock.h"
 #include "bat/ads/internal/ads_impl.h"
@@ -35,14 +35,14 @@ const std::vector<std::string> kTestAdUuids = {
 
 namespace ads {
 
-class BraveAdsAdHistoryConfirmationFilterTest : public ::testing::Test {
+class BatAdsHistoryConfirmationFilterTest : public ::testing::Test {
  protected:
-  BraveAdsAdHistoryConfirmationFilterTest()
+  BatAdsHistoryConfirmationFilterTest()
   : mock_ads_client_(std::make_unique<MockAdsClient>()),
     ads_(std::make_unique<AdsImpl>(mock_ads_client_.get())) {
     // You can do set-up work for each test here
   }
-  ~BraveAdsAdHistoryConfirmationFilterTest() override {
+  ~BatAdsHistoryConfirmationFilterTest() override {
     // You can do clean-up work that doesn't throw exceptions here
   }
 
@@ -54,14 +54,13 @@ class BraveAdsAdHistoryConfirmationFilterTest : public ::testing::Test {
     // each test)
 
     auto callback = std::bind(
-        &BraveAdsAdHistoryConfirmationFilterTest::OnAdsImplInitialize, this,
-        _1);
+        &BatAdsHistoryConfirmationFilterTest::OnAdsImplInitialize, this, _1);
     ads_->Initialize(callback);
 
     client_mock_ = std::make_unique<ClientMock>(ads_.get(),
         mock_ads_client_.get());
 
-    ad_history_filter_ = std::make_unique<AdHistoryConfirmationFilter>();
+    ad_history_filter_ = std::make_unique<AdsHistoryConfirmationFilter>();
 
     ads_history_.clear();
   }
@@ -78,7 +77,7 @@ class BraveAdsAdHistoryConfirmationFilterTest : public ::testing::Test {
   void PopulateAdHistory(const std::string& ad_uuid,
       const ConfirmationType::Value* values, const uint32_t items,
       const uint64_t time_offset_per_item) {
-    AdHistoryDetail ad_history_detail;
+    AdHistory ad_history_detail;
 
     auto now_in_seconds = Time::NowInSeconds();
 
@@ -107,19 +106,19 @@ class BraveAdsAdHistoryConfirmationFilterTest : public ::testing::Test {
 
   void TestFiltering(const std::string& ad_uuid,
       ConfirmationType::Value expected_confirmation_type_value) {
-    std::map<std::string, AdHistoryDetail> ad_history_detail_map;
+    std::map<std::string, AdHistory> ad_history_detail_map;
 
-    for (const AdHistoryDetail& adHistoryDetail : ads_history_filtered_) {
+    for (const AdHistory& ad_history_detail : ads_history_filtered_) {
       EXPECT_TRUE(IsConfirmationTypeOfInterest(
-          adHistoryDetail.ad_content.ad_action));
+          ad_history_detail.ad_content.ad_action));
 
-      if (adHistoryDetail.ad_content.uuid == ad_uuid) {
-        ad_history_detail_map[adHistoryDetail.ad_content.uuid] =
-            adHistoryDetail;
+      if (ad_history_detail.ad_content.uuid == ad_uuid) {
+        ad_history_detail_map[ad_history_detail.ad_content.uuid] =
+            ad_history_detail;
       }
     }
 
-    const AdHistoryDetail& ad_history_detail = ad_history_detail_map[ad_uuid];
+    const AdHistory& ad_history_detail = ad_history_detail_map[ad_uuid];
     EXPECT_EQ(ad_history_detail.ad_content.ad_action.value(),
         expected_confirmation_type_value);
   }
@@ -127,19 +126,19 @@ class BraveAdsAdHistoryConfirmationFilterTest : public ::testing::Test {
   void TestFilteringWithTimestamps(const std::string& ad_uuid,
       uint64_t expected_timestamp_in_seconds,
       ConfirmationType::Value expected_confirmation_type_value) {
-    std::map<std::string, AdHistoryDetail> ad_history_detail_map;
+    std::map<std::string, AdHistory> ad_history_detail_map;
 
-    for (const AdHistoryDetail& adHistoryDetail : ads_history_filtered_) {
+    for (const AdHistory& ad_history_detail : ads_history_filtered_) {
       EXPECT_TRUE(IsConfirmationTypeOfInterest(
-          adHistoryDetail.ad_content.ad_action));
+          ad_history_detail.ad_content.ad_action));
 
-      if (adHistoryDetail.ad_content.uuid == ad_uuid) {
-        ad_history_detail_map[adHistoryDetail.ad_content.uuid] =
-            adHistoryDetail;
+      if (ad_history_detail.ad_content.uuid == ad_uuid) {
+        ad_history_detail_map[ad_history_detail.ad_content.uuid] =
+            ad_history_detail;
       }
     }
 
-    const AdHistoryDetail& ad_history_detail = ad_history_detail_map[ad_uuid];
+    const AdHistory& ad_history_detail = ad_history_detail_map[ad_uuid];
     EXPECT_EQ(ad_history_detail.timestamp_in_seconds,
         expected_timestamp_in_seconds);
     EXPECT_EQ(ad_history_detail.ad_content.ad_action.value(),
@@ -151,7 +150,7 @@ class BraveAdsAdHistoryConfirmationFilterTest : public ::testing::Test {
       const ConfirmationType::Value expected_confirmation_value) {
     PopulateAdHistory(ad_uuid, values, items, 1);
 
-    const AdHistoryDetail& expected_ad_history_detail =
+    const AdHistory& expected_ad_history_detail =
         ads_history_[1];  // Trump
     const uint64_t expected_timestamp_in_seconds =
         expected_ad_history_detail.timestamp_in_seconds;
@@ -169,12 +168,12 @@ class BraveAdsAdHistoryConfirmationFilterTest : public ::testing::Test {
 
   std::unique_ptr<ClientMock> client_mock_;
 
-  std::deque<AdHistoryDetail> ads_history_;
-  std::deque<AdHistoryDetail> ads_history_filtered_;
+  std::deque<AdHistory> ads_history_;
+  std::deque<AdHistory> ads_history_filtered_;
   std::unique_ptr<AdHistoryFilter> ad_history_filter_;
 };
 
-TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
+TEST_F(BatAdsHistoryConfirmationFilterTest,
     NoFilteredResultsWhenNoAds) {
   // Arrange
   ConfirmationType::Value confirmation_types[] = {
@@ -192,7 +191,7 @@ TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
   EXPECT_EQ(ads_history_filtered_.size(), (uint64_t)0);
 }
 
-TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
+TEST_F(BatAdsHistoryConfirmationFilterTest,
     NoFilteredResultsForUnrecognisedConfirmationTypes) {
   // Arrange
   ConfirmationType::Value confirmation_types[] = {
@@ -216,7 +215,7 @@ TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
   EXPECT_EQ(ads_history_filtered_.size(), (uint64_t)0);
 }
 
-TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
+TEST_F(BatAdsHistoryConfirmationFilterTest,
     FilteredDismissResultWithUnrecognisedConfirmationTypes) {
   // Arrange
   ConfirmationType::Value confirmation_types[] = {
@@ -233,7 +232,7 @@ TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
   PopulateAdHistory(kTestAdUuids[0], confirmation_types,
       size_of_confirmation_types, 1);
 
-  const AdHistoryDetail& expected_ad_history_detail =
+  const AdHistory& expected_ad_history_detail =
       ads_history_[2];  // ::DISMISS
   const uint64_t expected_timestamp =
       expected_ad_history_detail.timestamp_in_seconds;
@@ -244,13 +243,13 @@ TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
   // Assert
   EXPECT_EQ(ads_history_.size(), (uint64_t)6);
   EXPECT_EQ(ads_history_filtered_.size(), (uint64_t)1);
-  const AdHistoryDetail& ad_history_detail = ads_history_filtered_.front();
+  const AdHistory& ad_history_detail = ads_history_filtered_.front();
   EXPECT_EQ(ad_history_detail.timestamp_in_seconds, expected_timestamp);
   EXPECT_EQ(ad_history_detail.ad_content.ad_action,
        ConfirmationType::Value::DISMISS);
 }
 
-TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
+TEST_F(BatAdsHistoryConfirmationFilterTest,
     ExpectLatestDismiss) {
   // Arrange
   ConfirmationType::Value confirmation_types[] = {
@@ -263,7 +262,7 @@ TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
   PopulateAdHistory(kTestAdUuids[0], confirmation_types,
       size_of_confirmation_types, 1);
 
-  const AdHistoryDetail& expected_ad_history_detail =
+  const AdHistory& expected_ad_history_detail =
       ads_history_.back();  // Trump
   const uint64_t expected_timestamp =
       expected_ad_history_detail.timestamp_in_seconds;
@@ -274,13 +273,13 @@ TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
   // Assert
   EXPECT_EQ(ads_history_.size(), (uint64_t)2);
   EXPECT_EQ(ads_history_filtered_.size(), (uint64_t)1);
-  const AdHistoryDetail& ad_history_detail = ads_history_filtered_.front();
+  const AdHistory& ad_history_detail = ads_history_filtered_.front();
   EXPECT_EQ(ad_history_detail.timestamp_in_seconds, expected_timestamp);
   EXPECT_EQ(ad_history_detail.ad_content.ad_action,
        ConfirmationType::Value::DISMISS);
 }
 
-TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
+TEST_F(BatAdsHistoryConfirmationFilterTest,
     ViewTrumpsDismiss) {
   // Arrange
   const ConfirmationType::Value expected_confirmation_type =
@@ -299,7 +298,7 @@ TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
       size_of_confirmation_types, expected_confirmation_type);
 }
 
-TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
+TEST_F(BatAdsHistoryConfirmationFilterTest,
     ClickTrumpsDismiss) {
   // Arrange
   const ConfirmationType::Value expected_confirmation_type =
@@ -318,7 +317,7 @@ TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
       size_of_confirmation_types, expected_confirmation_type);
 }
 
-TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
+TEST_F(BatAdsHistoryConfirmationFilterTest,
     ClickTrumpsView) {
   // Arrange
   const ConfirmationType::Value expected_confirmation_type =
@@ -337,7 +336,7 @@ TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
       size_of_confirmation_types, expected_confirmation_type);
 }
 
-TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
+TEST_F(BatAdsHistoryConfirmationFilterTest,
     ClickTrumpsViewAndDismiss) {
   // Arrange
   const ConfirmationType::Value expected_confirmation_type =
@@ -356,7 +355,7 @@ TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
       size_of_confirmation_types, expected_confirmation_type);
 }
 
-TEST_F(BraveAdsAdHistoryConfirmationFilterTest,
+TEST_F(BatAdsHistoryConfirmationFilterTest,
     MultipleAdHistoriesFilterCorrectly) {
   // Arrange
   size_t size_of_confirmation_types = 0;

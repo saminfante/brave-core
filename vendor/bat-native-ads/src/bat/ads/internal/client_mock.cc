@@ -8,7 +8,7 @@
 
 #include "bat/ads/internal/client_mock.h"
 
-#include "bat/ads/ad_history_detail.h"
+#include "bat/ads/ad_history.h"
 #include "bat/ads/internal/time.h"
 #include "base/guid.h"
 
@@ -20,7 +20,7 @@ void ClientMock::GeneratePastAdHistoryFromNow(
     const uint8_t count) {
   auto now_in_seconds = Time::NowInSeconds();
 
-  auto ad_history_detail = std::make_unique<AdHistoryDetail>();
+  auto ad_history_detail = std::make_unique<AdHistory>();
   ad_history_detail->uuid = base::GenerateGUID();
   ad_history_detail->ad_content.uuid = uuid;
 

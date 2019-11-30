@@ -6,10 +6,11 @@
 #include <algorithm>
 #include <fstream>
 #include <functional>
+#include <map>
 #include <utility>
 #include <vector>
 
-#include "bat/ads/ad_history_detail.h"
+#include "bat/ads/ad_history.h"
 #include "bat/ads/ads_client.h"
 #include "bat/ads/ads_history.h"
 #include "bat/ads/confirmation_type.h"
@@ -32,7 +33,8 @@
 #include "bat/ads/internal/frequency_capping/permission_rules/minimum_wait_time_frequency_cap.h"
 #include "bat/ads/internal/frequency_capping/permission_rules/ads_per_day_frequency_cap.h"
 #include "bat/ads/internal/frequency_capping/permission_rules/ads_per_hour_frequency_cap.h"
-#include "bat/ads/internal/filters/ad_history_confirmation_filter.h"
+#include "bat/ads/internal/filters/ads_history_filter_factory.h"
+#include "bat/ads/internal/sorts/ads_history_sort_factory.h"
 
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
@@ -551,42 +553,33 @@ void AdsImpl::SetConfirmationsIsReady(
   is_confirmations_ready_ = is_ready;
 }
 
-std::map<uint64_t, std::vector<AdsHistory>> AdsImpl::GetAdsHistory(
-    const AdsHistoryFilterType ads_history_filter_type) {
-  std::map<uint64_t, std::vector<AdsHistory>> ads_history;
-  base::Time now = base::Time::Now().LocalMidnight();
+AdsHistory AdsImpl::GetAdsHistory(
+    const AdsHistoryFilterType filter_type,
+    const AdsHistorySortType sort_type) {
+  auto history = client_->GetAdsShownHistory();
 
-  auto ad_history_details = client_->GetAdsShownHistory();
-
-  std::unique_ptr<AdHistoryFilter> ad_history_filter;
-  switch (ads_history_filter_type) {
-    case AdsHistoryFilterType::kNone: {
-      break;
-    }
-    case AdsHistoryFilterType::kConfirmationType: {
-      ad_history_filter = std::make_unique<AdHistoryConfirmationFilter>();
-      break;
-    }
+  const auto filter = AdsHistoryFilterFactory::Build(filter_type);
+  if (filter) {
+    history = filter->Apply(history);
   }
 
-  if (ad_history_filter) {
-    ad_history_details = ad_history_filter->ApplyFilter(ad_history_details);
+  const auto sort = AdsHistorySortFactory::Build(sort_type);
+  if (sort) {
+    history = sort->Apply(history);
   }
 
-  for (auto& detail_item : ad_history_details) {
-    auto history_item = std::make_unique<AdsHistory>();
-    history_item->details.push_back(detail_item);
+  const base::Time now = base::Time::Now().LocalMidnight();
 
-    base::Time timestamp =
-        Time::FromDoubleT(detail_item.timestamp_in_seconds).LocalMidnight();
-    base::TimeDelta time_delta = now - timestamp;
+  AdsHistory ads_history;
+
+  for (auto& entry : history) {
+    base::Time timestamp = Time::FromDoubleT(entry.timestamp_in_seconds);
+    base::TimeDelta time_delta = now - timestamp.LocalMidnight();
     if (time_delta.InDays() >= kDaysOfAdsHistory) {
-      break;
+      continue;
     }
 
-    const uint64_t timestamp_in_seconds =
-        static_cast<uint64_t>((timestamp - base::Time()).InSeconds());
-    ads_history[timestamp_in_seconds].push_back(*history_item);
+    ads_history.entries.push_back(entry);
   }
 
   return ads_history;
@@ -989,36 +982,36 @@ void AdsImpl::CheckReadyAdServe(
     return;
   }
 
-  if (!forced) {
-    if (!is_confirmations_ready_) {
-      FailedToServeAd("Confirmations not ready");
-      return;
-    }
+  // if (!forced) {
+  //   if (!is_confirmations_ready_) {
+  //     FailedToServeAd("Confirmations not ready");
+  //     return;
+  //   }
 
-    if (!IsAndroid() && !IsForeground()) {
-      FailedToServeAd("Not in foreground");
-      return;
-    }
+  //   if (!IsAndroid() && !IsForeground()) {
+  //     FailedToServeAd("Not in foreground");
+  //     return;
+  //   }
 
-    if (IsMediaPlaying()) {
-      FailedToServeAd("Media playing in browser");
-      return;
-    }
+  //   if (IsMediaPlaying()) {
+  //     FailedToServeAd("Media playing in browser");
+  //     return;
+  //   }
 
-    if (ShouldNotDisturb()) {
-      // TODO(Terry Mancey): Implement Log (#44)
-      // 'Notification not made', { reason: 'do not disturb while not in
-      // foreground' }
+  //   if (ShouldNotDisturb()) {
+  //     // TODO(Terry Mancey): Implement Log (#44)
+  //     // 'Notification not made', { reason: 'do not disturb while not in
+  //     // foreground' }
 
-      FailedToServeAd("Should not disturb");
-      return;
-    }
+  //     FailedToServeAd("Should not disturb");
+  //     return;
+  //   }
 
-    if (!IsAllowedToServeAds()) {
-      FailedToServeAd("Not allowed based on history");
-      return;
-    }
-  }
+  //   if (!IsAllowedToServeAds()) {
+  //     FailedToServeAd("Not allowed based on history");
+  //     return;
+  //   }
+  // }
 
   auto categories = GetWinningCategories();
   ServeAdFromCategories(categories);
@@ -1186,31 +1179,31 @@ std::vector<AdInfo> AdsImpl::GetEligibleAds(
       CreateExclusionRules();
 
   for (const auto& ad : unseen_ads) {
-    bool should_exclude = false;
-    for (std::unique_ptr<ExclusionRule>& exclusion_rule : exclusion_rules) {
-      if (exclusion_rule->ShouldExclude(ad)) {
-        BLOG(INFO) << exclusion_rule->GetLastMessage();
-        should_exclude = true;
-      }
-    }
+    // bool should_exclude = false;
+    // for (std::unique_ptr<ExclusionRule>& exclusion_rule : exclusion_rules) {
+    //   if (exclusion_rule->ShouldExclude(ad)) {
+    //     BLOG(INFO) << exclusion_rule->GetLastMessage();
+    //     should_exclude = true;
+    //   }
+    // }
 
-    if (should_exclude) {
-      continue;
-    }
+    // if (should_exclude) {
+    //   continue;
+    // }
 
-    if (client_->IsFilteredAd(ad.creative_set_id)) {
-      BLOG(WARNING) << "creativeSetId " << ad.creative_set_id
-          << " appears in the filtered ads list";
+    // if (client_->IsFilteredAd(ad.creative_set_id)) {
+    //   BLOG(WARNING) << "creativeSetId " << ad.creative_set_id
+    //       << " appears in the filtered ads list";
 
-      continue;
-    }
+    //   continue;
+    // }
 
-    if (client_->IsFlaggedAd(ad.creative_set_id)) {
-      BLOG(WARNING) << "creativeSetId " << ad.creative_set_id
-          << " appears in the flagged ads list";
+    // if (client_->IsFlaggedAd(ad.creative_set_id)) {
+    //   BLOG(WARNING) << "creativeSetId " << ad.creative_set_id
+    //       << " appears in the flagged ads list";
 
-      continue;
-    }
+    //   continue;
+    // }
 
     eligible_ads.push_back(ad);
   }
@@ -2096,7 +2089,7 @@ void AdsImpl::GenerateAdReportingSettingsEvent() {
 void AdsImpl::GenerateAdsHistoryEntry(
     const NotificationInfo& notification_info,
     const ConfirmationType& confirmation_type) {
-  auto ad_history_detail = std::make_unique<AdHistoryDetail>();
+  auto ad_history_detail = std::make_unique<AdHistory>();
   ad_history_detail->timestamp_in_seconds = Time::NowInSeconds();
   ad_history_detail->uuid = base::GenerateGUID();
   ad_history_detail->ad_content.uuid = notification_info.uuid;

@@ -212,7 +212,7 @@ class AdsServiceImpl : public AdsService,
 
   void OnGetAdsHistory(
       OnGetAdsHistoryCallback callback,
-      const base::flat_map<uint64_t, std::vector<std::string>>& json);
+      const std::string& json);
 
   void OnRemoveAllHistory(
       const int32_t result);

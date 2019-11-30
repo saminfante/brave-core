@@ -5,7 +5,7 @@
 
 #include "bat/ads/ads_history.h"
 
-#include "bat/ads/ad_history_detail.h"
+#include "bat/ads/ad_history.h"
 #include "bat/ads/internal/json_helper.h"
 
 #include "base/logging.h"
@@ -13,10 +13,10 @@
 namespace ads {
 
 AdsHistory::AdsHistory() :
-    details() {}
+    entries() {}
 
 AdsHistory::AdsHistory(const AdsHistory& history) :
-    details(history.details) {}
+    entries(history.entries) {}
 
 AdsHistory::~AdsHistory() = default;
 
@@ -42,12 +42,12 @@ Result AdsHistory::FromJson(
 
   if (document.HasMember("details")) {
     for (const auto& detail : document["details"].GetArray()) {
-      AdHistoryDetail ad_history_detail;
+      AdHistory ad_history_detail;
       rapidjson::StringBuffer buffer;
       rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
       if (detail.Accept(writer) &&
           ad_history_detail.FromJson(buffer.GetString()) == SUCCESS) {
-        details.push_back(ad_history_detail);
+        entries.push_back(ad_history_detail);
       }
     }
   }
@@ -60,7 +60,7 @@ void SaveToJson(JsonWriter* writer, const AdsHistory& history) {
 
   writer->String("details");
   writer->StartArray();
-  for (const auto& ad_history_detail : history.details) {
+  for (const auto& ad_history_detail : history.entries) {
     SaveToJson(writer, ad_history_detail);
   }
   writer->EndArray();

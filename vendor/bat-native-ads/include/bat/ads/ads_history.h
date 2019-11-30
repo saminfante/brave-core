@@ -11,7 +11,7 @@
 
 #include "bat/ads/export.h"
 #include "bat/ads/result.h"
-#include "bat/ads/ad_history_detail.h"
+#include "bat/ads/ad_history.h"
 
 namespace ads {
 
@@ -20,9 +20,16 @@ enum class AdsHistoryFilterType {
   kConfirmationType
 };
 
+enum class AdsHistorySortType {
+  kNone = 0,
+  kAscendingOrder,
+  kDescendingOrder
+};
+
 struct ADS_EXPORT AdsHistory {
   AdsHistory();
-  explicit AdsHistory(const AdsHistory& history);
+  AdsHistory(
+      const AdsHistory& history);
   ~AdsHistory();
 
   const std::string ToJson() const;
@@ -30,8 +37,7 @@ struct ADS_EXPORT AdsHistory {
       const std::string& json,
       std::string* error_description = nullptr);
 
-  // Chronologically sorted vector of ad history detail entries
-  std::vector<AdHistoryDetail> details;
+  std::vector<AdHistory> entries;
 };
 
 }  // namespace ads
