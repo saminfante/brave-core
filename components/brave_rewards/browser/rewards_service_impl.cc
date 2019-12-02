@@ -427,12 +427,14 @@ bool IsMediaLink(const GURL& url,
 const base::FilePath::StringType kLedger_state(L"ledger_state");
 const base::FilePath::StringType kPublisher_state(L"publisher_state");
 const base::FilePath::StringType kPublisher_info_db(L"publisher_info_db");
+const base::FilePath::StringType kPublisher_info_db_temmp(L"publisher_info_db_temp");
 const base::FilePath::StringType kPublishers_list(L"publishers_list");
 const base::FilePath::StringType kRewardsStatePath(L"rewards_service");
 #else
 const base::FilePath::StringType kLedger_state("ledger_state");
 const base::FilePath::StringType kPublisher_state("publisher_state");
 const base::FilePath::StringType kPublisher_info_db("publisher_info_db");
+const base::FilePath::StringType kPublisher_info_db_temmp("publisher_info_db_temp");
 const base::FilePath::StringType kPublishers_list("publishers_list");
 const base::FilePath::StringType kRewardsStatePath("rewards_service");
 #endif
@@ -451,6 +453,7 @@ RewardsServiceImpl::RewardsServiceImpl(Profile* profile)
       ledger_state_path_(profile_->GetPath().Append(kLedger_state)),
       publisher_state_path_(profile_->GetPath().Append(kPublisher_state)),
       publisher_info_db_path_(profile->GetPath().Append(kPublisher_info_db)),
+      publisher_info_db_path_temp_(profile->GetPath().Append(kPublisher_info_db_temmp)),
       publisher_list_path_(profile->GetPath().Append(kPublishers_list)),
       rewards_base_path_(profile_->GetPath().Append(kRewardsStatePath)),
       publisher_info_backend_(
@@ -4350,7 +4353,7 @@ void RewardsServiceImpl::OnGetAnonWalletStatus(
 }
 
 std::string RewardsServiceImpl::GetDatabasePath() const {
-  return publisher_info_db_path_.value();
+  return publisher_info_db_path_temp_.value();
 }
 
 }  // namespace brave_rewards
