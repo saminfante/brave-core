@@ -285,6 +285,8 @@ class Contribution {
                   bool created,
                   const std::string& viewing_id);
 
+  void OnDeleteContributionQueue(const ledger::Result result);
+
   bat_ledger::LedgerImpl* ledger_;  // NOT OWNED
   std::unique_ptr<PhaseOne> phase_one_;
   std::unique_ptr<PhaseTwo> phase_two_;

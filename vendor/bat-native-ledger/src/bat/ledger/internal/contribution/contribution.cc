@@ -91,7 +91,6 @@ void Contribution::OnProcessContributionQueue(
   }
 
   InitReconcile(std::move(info));
-  CheckContributionQueue();
 }
 
 void Contribution::HasSufficientBalance(
@@ -714,15 +713,23 @@ bool Contribution::HaveReconcileEnoughFunds(
   return true;
 }
 
+void Contribution::OnDeleteContributionQueue(const ledger::Result result) {
+  CheckContributionQueue();
+}
+
 void Contribution::DeleteContributionQueue(
     ledger::ContributionQueuePtr contribution) {
   if (!contribution || contribution->id == 0) {
     return;
   }
 
+  auto callback = std::bind(&Contribution::OnDeleteContributionQueue,
+      this,
+      _1);
+
   ledger_->DeleteContributionQueue(
       contribution->id,
-      [](const ledger::Result _){});
+      callback);
 }
 
 bool Contribution::ProcessReconcileUnblindedTokens(
