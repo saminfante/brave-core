@@ -19,7 +19,7 @@ export const StyledWrapper = styled<Partial<Props>, 'div'>('div')`
 
 export const StyledTitle = styled<{}, 'div'>('div')`
   font-size: 14px;
-  line-height: 2.79;
+  line-height: 1.3;
   color: #4b4c5c;
   flex-grow: 1;
   flex-shrink: 1;
