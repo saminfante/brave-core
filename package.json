@@ -13,7 +13,9 @@
     "storybook": "start-storybook",
     "test-unit": "jest -t",
     "test-security": "npm audit",
-    "test-python-scripts": "npm run pep8 && PYTHONPATH=./script python -m unittest discover -s ./script/test"
+    "test-python-scripts": "npm run pep8 && PYTHONPATH=./script python -m unittest discover -s ./script/test",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -345,6 +347,8 @@
     "redux-thunk": "^2.3.0",
     "throttleit": "^1.0.0",
     "unique-selector": "^0.4.1",
-    "webtorrent": "^0.107.16"
-  }
+    "webtorrent": "^0.107.16",
+    "snyk": "^1.316.1"
+  },
+  "snyk": true
 }
